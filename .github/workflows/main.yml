@@ -6,6 +6,13 @@ on:
       - main
     paths:
       - 'module.json'
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force release even if module.json version did not change'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   check-version:
@@ -28,6 +35,12 @@ jobs:
       - name: Check if version changed
         id: check-version
         run: |
+          # Manual dispatch with force_release skips the diff check
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_release }}" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Manual dispatch with force_release=true — skipping version diff"
+            exit 0
+          fi
           git diff HEAD^ HEAD -- module.json > diff.txt
           if grep -q '"version"' diff.txt; then
             echo "changed=true" >> $GITHUB_OUTPUT
