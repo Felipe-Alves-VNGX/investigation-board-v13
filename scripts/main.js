@@ -669,22 +669,26 @@ async function _resolveDocumentFromLi(li, collection) {
   return null;
 }
 
+// v13 context menu entry format: { name, icon (HTML), callback, condition }
+// Helper to wrap an icon class string as the HTML <i> element v13 expects.
+const _ibIcon = (cls) => `<i class="${cls}"></i>`;
+
 // Context menu hook for Actor directory
 Hooks.on("getActorContextOptions", (app, entryOptions) => {
   entryOptions.push(
     {
-      label: "Photo Note from Actor",
-      icon: "fa-solid fa-camera-polaroid",
-      onClick: async (event, li) => {
+      name: "Photo Note from Actor",
+      icon: _ibIcon("fa-solid fa-camera-polaroid"),
+      callback: async (li) => {
         const actor = await _resolveDocumentFromLi(li, game.actors);
         if (actor) await createPhotoNoteFromActor(actor, false);
         else ui.notifications.warn("Investigation Board: Could not resolve Actor.");
       }
     },
     {
-      label: "Unknown Photo Note from Actor",
-      icon: "fa-solid fa-camera-polaroid",
-      onClick: async (event, li) => {
+      name: "Unknown Photo Note from Actor",
+      icon: _ibIcon("fa-solid fa-camera-polaroid"),
+      callback: async (li) => {
         const actor = await _resolveDocumentFromLi(li, game.actors);
         if (actor) await createPhotoNoteFromActor(actor, true);
         else ui.notifications.warn("Investigation Board: Could not resolve Actor.");
@@ -696,9 +700,9 @@ Hooks.on("getActorContextOptions", (app, entryOptions) => {
 // Context menu hook for Item directory
 Hooks.on("getItemContextOptions", (app, entryOptions) => {
   entryOptions.push({
-    label: "Photo Note from Item",
-    icon: "fa-solid fa-camera-polaroid",
-    onClick: async (event, li) => {
+    name: "Photo Note from Item",
+    icon: _ibIcon("fa-solid fa-camera-polaroid"),
+    callback: async (li) => {
       const item = await _resolveDocumentFromLi(li, game.items);
       if (item) await createPhotoNoteFromItem(item);
       else ui.notifications.warn("Investigation Board: Could not resolve Item.");
@@ -706,12 +710,12 @@ Hooks.on("getItemContextOptions", (app, entryOptions) => {
   });
 });
 
-// Context menu hook for Scene directory and Scene Navigation (both fire getSceneContextOptions in v14)
+// Context menu hook for Scene directory
 Hooks.on("getSceneContextOptions", (app, entryOptions) => {
   entryOptions.push({
-    label: "Photo Note from Scene",
-    icon: "fa-solid fa-camera-polaroid",
-    onClick: async (event, li) => {
+    name: "Photo Note from Scene",
+    icon: _ibIcon("fa-solid fa-camera-polaroid"),
+    callback: async (li) => {
       const scene = await _resolveDocumentFromLi(li, game.scenes);
       if (scene) await createPhotoNoteFromScene(scene);
       else ui.notifications.warn("Investigation Board: Could not resolve Scene.");
@@ -723,32 +727,32 @@ Hooks.on("getSceneContextOptions", (app, entryOptions) => {
 Hooks.on("getJournalEntryPageContextOptions", (app, entryOptions) => {
   // Image pages → Handout Note
   entryOptions.push({
-    label: "Create Handout Note",
-    icon: "fas fa-file-image",
-    onClick: async (event, li) => {
+    name: "Create Handout Note",
+    icon: _ibIcon("fas fa-file-image"),
+    callback: async (li) => {
       const page = _getJournalPageFromLi(li);
       if (page?.type === "image") await createHandoutNoteFromPage(page);
       else ui.notifications.warn("Only image-type journal pages can be turned into handouts.");
     },
-    visible: (li) => _getJournalPageFromLi(li)?.type === "image",
+    condition: (li) => _getJournalPageFromLi(li)?.type === "image",
   });
 
   // Text pages → Index Card
   entryOptions.push({
-    label: "Text to Index Card",
-    icon: "fa-regular fa-subtitles",
-    onClick: async (event, li) => {
+    name: "Text to Index Card",
+    icon: _ibIcon("fa-regular fa-subtitles"),
+    callback: async (li) => {
       const page = _getJournalPageFromLi(li);
       if (page) await createTextIndexFromPage(page);
     },
-    visible: (li) => _getJournalPageFromLi(li)?.type === "text",
+    condition: (li) => _getJournalPageFromLi(li)?.type === "text",
   });
 
   // Text pages → Document Note (background picker via small dialog)
   entryOptions.push({
-    label: "Text to Document Note",
-    icon: "fas fa-scroll",
-    onClick: async (event, li) => {
+    name: "Text to Document Note",
+    icon: _ibIcon("fas fa-scroll"),
+    callback: async (li) => {
       const page = _getJournalPageFromLi(li);
       if (!page) return;
 
@@ -783,16 +787,16 @@ Hooks.on("getJournalEntryPageContextOptions", (app, entryOptions) => {
 
       if (result?.confirmed) await createDocNoteFromPage(page, result.background);
     },
-    visible: (li) => _getJournalPageFromLi(li)?.type === "text",
+    condition: (li) => _getJournalPageFromLi(li)?.type === "text",
   });
 });
 
 // Context menu hook for Playlist sounds
 Hooks.on("getPlaylistSoundContextOptions", (app, entryOptions) => {
   entryOptions.push({
-    label: "Create Media Note",
-    icon: "fas fa-cassette-tape",
-    onClick: async (event, li) => {
+    name: "Create Media Note",
+    icon: _ibIcon("fas fa-cassette-tape"),
+    callback: async (li) => {
       const sound = _getPlaylistSoundFromLi(li);
       if (sound) {
         await createMediaNoteFromSound(sound);
@@ -804,9 +808,9 @@ Hooks.on("getPlaylistSoundContextOptions", (app, entryOptions) => {
 // Context menu hook for Playlist entries
 Hooks.on("getPlaylistContextOptions", (app, entryOptions) => {
   entryOptions.push({
-    label: "Import Playlist as Notes",
-    icon: "fas fa-cassette-tape",
-    onClick: async (event, li) => {
+    name: "Import Playlist as Notes",
+    icon: _ibIcon("fas fa-cassette-tape"),
+    callback: async (li) => {
       const playlist = await _resolveDocumentFromLi(li, game.playlists);
       if (playlist) {
         await importPlaylistAsNotes(playlist);
@@ -814,7 +818,7 @@ Hooks.on("getPlaylistContextOptions", (app, entryOptions) => {
         ui.notifications.warn("Investigation Board: Could not resolve Playlist.");
       }
     },
-    visible: () => game.user.isGM
+    condition: () => game.user.isGM
   });
 });
 
@@ -847,18 +851,39 @@ async function _onImportFolderAsNotes(li) {
   }
 }
 
-// Folder Context Hook — v14 fires getFolderContextOptions for all directory types
-Hooks.on("getFolderContextOptions", (app, entryOptions) => {
-  // Avoid duplicate entries
-  if (entryOptions.find(e => e.label === "Import Folder as Notes")) return;
-
+// v13 SceneNavigation has a dedicated hook (not covered by getSceneContextOptions)
+Hooks.on("getSceneNavigationContext", (app, entryOptions) => {
   entryOptions.push({
-    label: "Import Folder as Notes",
-    icon: "fa-solid fa-camera-polaroid",
-    onClick: (event, li) => _onImportFolderAsNotes(li),
-    visible: () => game.user.isGM
+    name: "Photo Note from Scene",
+    icon: _ibIcon("fa-solid fa-camera-polaroid"),
+    callback: async (li) => {
+      const scene = await _resolveDocumentFromLi(li, game.scenes);
+      if (scene) await createPhotoNoteFromScene(scene);
+      else ui.notifications.warn("Investigation Board: Could not resolve Scene.");
+    }
   });
 });
+
+// v13: each directory has its own folder context hook (no unified getFolderContextOptions)
+const _IB_FOLDER_HOOKS = [
+  "getActorFolderContextOptions",
+  "getItemFolderContextOptions",
+  "getJournalFolderContextOptions",
+  "getSceneFolderContextOptions",
+  "getPlaylistFolderContextOptions",
+];
+
+for (const hookName of _IB_FOLDER_HOOKS) {
+  Hooks.on(hookName, (app, entryOptions) => {
+    if (entryOptions.find(e => e.name === "Import Folder as Notes")) return;
+    entryOptions.push({
+      name: "Import Folder as Notes",
+      icon: _ibIcon("fa-solid fa-camera-polaroid"),
+      callback: (li) => _onImportFolderAsNotes(li),
+      condition: () => game.user.isGM
+    });
+  });
+}
 
 
 // Hook to deactivate connect mode on scene change and initialize connection lines
@@ -911,21 +936,33 @@ Hooks.on("canvasReady", async () => {
   });
 });
 
-// Adds "Create Handout Note" to the Image Popout header controls dropdown (v14 AppV2 approach).
-// getHeaderControlsImagePopout fires when Foundry builds the ellipsis-menu controls list.
-Hooks.on("getHeaderControlsImagePopout", (app, controls) => {
+// v13: ImagePopout has no getHeaderControlsImagePopout hook. Inject a header
+// button via renderImagePopout on the rendered DOM.
+Hooks.on("renderImagePopout", (app, html, data) => {
   if (!game.user.isGM) return;
-  controls.push({
-    action: "createHandoutNote",
-    icon: "fa-solid fa-file-image",
-    label: "Create Handout Note",
-    onClick: () => {
-      const src = app.options.src;
-      if (src) {
-        createHandoutNoteFromImage(src);
-      } else {
-        ui.notifications.warn("Investigation Board: Could not resolve image source from popout.");
-      }
-    }
+  const root = html instanceof jQuery ? html[0] : html;
+  if (!root) return;
+
+  // Avoid duplicate injection on re-renders
+  if (root.querySelector(".ib-create-handout-btn")) return;
+
+  const header = root.querySelector(".window-header") ?? root.querySelector("header");
+  if (!header) return;
+
+  const btn = document.createElement("a");
+  btn.className = "header-button ib-create-handout-btn";
+  btn.title = "Create Handout Note";
+  btn.innerHTML = `<i class="fa-solid fa-file-image"></i>`;
+  btn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const src = app.options?.src ?? data?.image ?? data?.src;
+    if (src) createHandoutNoteFromImage(src);
+    else ui.notifications.warn("Investigation Board: Could not resolve image source from popout.");
   });
+
+  // Insert before the close button if possible
+  const closeBtn = header.querySelector(".header-button.close, [data-action='close']");
+  if (closeBtn) closeBtn.before(btn);
+  else header.appendChild(btn);
 });
