@@ -8,108 +8,155 @@ on:
       - 'module.json'
   workflow_dispatch:
     inputs:
-      force_release:
-        description: 'Force release even if module.json version did not change'
+      version:
+        description: 'Release version (e.g. 6.0.0). Will overwrite module.json version and commit it back.'
+        type: string
+        required: true
+      prerelease:
+        description: 'Mark this as a pre-release'
         type: boolean
         required: false
-        default: true
+        default: false
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
-      version-changed: ${{ steps.check-version.outputs.changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Get current version
-        id: get-version
-        run: |
-          VERSION=$(jq -r '.version' module.json)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Current version: $VERSION"
-      - name: Check if version changed
-        id: check-version
-        run: |
-          # Manual dispatch with force_release skips the diff check
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_release }}" = "true" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Manual dispatch with force_release=true — skipping version diff"
-            exit 0
-          fi
-          git diff HEAD^ HEAD -- module.json > diff.txt
-          if grep -q '"version"' diff.txt; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Version changed detected"
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "Version not changed"
-          fi
   release:
-    needs: check-version
-    if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Get module info
-        id: module-info
+      - name: Resolve version
+        id: version
         run: |
-          VERSION=$(jq -r '.version' module.json)
-          TITLE=$(jq -r '.title' module.json)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            VERSION="${VERSION#v}"
+            if [ -z "$VERSION" ]; then
+              echo "::error::version input is empty"
+              exit 1
+            fi
+            if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
+              echo "::error::Invalid version format: $VERSION (expected 6.0.0 or 6.0.0-rc.1)"
+              exit 1
+            fi
+            jq --arg v "$VERSION" '.version = $v' module.json > module.tmp.json
+            mv module.tmp.json module.json
+            echo "Updated module.json version to $VERSION"
+          else
+            VERSION=$(jq -r '.version' module.json)
+            echo "Using version from module.json: $VERSION"
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          echo "Preparing release for $TITLE v$VERSION"
-      - name: Create module.zip
+
+      - name: Read module metadata
+        id: meta
         run: |
-          # Create the zip with only essential module files
-          zip -r module.zip \
-            module.json \
-            scripts/ \
-            styles/ \
-            templates/ \
-            assets/ \
-            packs/ \
-            LICENSE
-          # Verify the zip was created
-          ls -lh module.zip
-          echo "Module packaged successfully"
-          # Show contents
-          echo "Contents of module.zip:"
-          unzip -l module.zip
+          TITLE=$(jq -r '.title' module.json)
+          MIN=$(jq -r '.compatibility.minimum // empty' module.json)
+          VERIFIED=$(jq -r '.compatibility.verified // empty' module.json)
+          MAX=$(jq -r '.compatibility.maximum // empty' module.json)
+
+          if [ -n "$MAX" ] && [ "$MIN" = "$MAX" ]; then
+            COMPAT="Foundry VTT v$MIN"
+          elif [ -n "$MAX" ]; then
+            COMPAT="Foundry VTT v$MIN – v$MAX"
+          elif [ -n "$VERIFIED" ]; then
+            COMPAT="Foundry VTT v$MIN (verified on v$VERIFIED)"
+          else
+            COMPAT="Foundry VTT v$MIN+"
+          fi
+
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "compat=$COMPAT" >> $GITHUB_OUTPUT
+
+      - name: Commit version bump (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if git diff --quiet module.json; then
+            echo "module.json unchanged — skipping commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add module.json
+            git commit -m "chore: release v${{ steps.version.outputs.version }}"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: Build release artifacts
+        run: |
+          # The committed module.json keeps 'manifest' pointing at /latest/ so
+          # Foundry's auto-update grabs the newest release. The COPY uploaded
+          # with this release pins 'download' to this exact version tag — so
+          # installing v6.0.0 always pulls v6.0.0 even after newer releases ship.
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO="${{ github.repository }}"
+          VERSIONED_DOWNLOAD="https://github.com/${REPO}/releases/download/v${VERSION}/module.zip"
+
+          mkdir -p _release/pkg
+          # Versioned module.json (pinned download URL) — used both as the
+          # standalone release asset AND inside the zip.
+          jq --arg dl "$VERSIONED_DOWNLOAD" '.download = $dl' module.json > _release/module.json
+
+          # Stage packaged contents
+          cp _release/module.json _release/pkg/module.json
+          cp -r scripts styles templates assets packs LICENSE _release/pkg/
+
+          cd _release/pkg
+          zip -r ../module.zip .
+          cd ../..
+
+          echo "Versioned module.json (release asset):"
+          jq '{version, url, manifest, download}' _release/module.json
+
+          echo ""
+          echo "Release artifacts:"
+          ls -lh _release/module.zip _release/module.json
+
+          echo ""
+          echo "Zip contents:"
+          unzip -l _release/module.zip
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.module-info.outputs.version }}
-          name: ${{ steps.module-info.outputs.title }} v${{ steps.module-info.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: ${{ steps.meta.outputs.title }} v${{ steps.version.outputs.version }}
           body: |
-            ## ${{ steps.module-info.outputs.title }} v${{ steps.module-info.outputs.version }}
+            ## ${{ steps.meta.outputs.title }} v${{ steps.version.outputs.version }}
+
             ### Installation
-            Install this version using the following manifest URL:
+            Install using this manifest URL (auto-updates to latest):
             ```
-            https://github.com/${{ github.repository }}/releases/download/v${{ steps.module-info.outputs.version }}/module.json
+            https://github.com/${{ github.repository }}/releases/latest/download/module.json
+            ```
+            Or pin to this exact version:
+            ```
+            https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/module.json
             ```
             Or download `module.zip` and install manually.
+
             ### Compatibility
-            - Foundry VTT v13.332+
+            - ${{ steps.meta.outputs.compat }}
+
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
           files: |
-            module.zip
-            module.json
+            _release/module.zip
+            _release/module.json
+          fail_on_unmatched_files: true
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update latest release links
+      - name: Summary
         run: |
           echo "Release created successfully!"
-          echo "Download URL: https://github.com/${{ github.repository }}/releases/download/v${{ steps.module-info.outputs.version }}/module.zip"
-          echo "Manifest URL: https://github.com/${{ github.repository }}/releases/download/v${{ steps.module-info.outputs.version }}/module.json"
+          echo "Tag:           v${{ steps.version.outputs.version }}"
+          echo "Compatibility: ${{ steps.meta.outputs.compat }}"
+          echo "Manifest URL:  https://github.com/${{ github.repository }}/releases/latest/download/module.json"
+          echo "Pinned URL:    https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/module.json"
+          echo "Download URL:  https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/module.zip"
