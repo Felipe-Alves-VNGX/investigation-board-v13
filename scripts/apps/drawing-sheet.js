@@ -236,9 +236,9 @@ export class CustomDrawingSheet extends DrawingConfig {
   }
 
   /**
-   * Override _prepareSubmitData to prevent AppV2's DocumentSheetV2 from validating
-   * IB-specific form fields (text, image, font, etc.) against the DrawingDocument
-   * schema. IB handles all updates manually through the submit event handler in _onRender.
+   * IB handles all form updates manually via the submit event handler in _onRender.
+   * Returning {} prevents DocumentSheetV2 from validating IB-specific fields
+   * (text, image, font, etc.) against the DrawingDocument schema.
    */
   _prepareSubmitData(event, form, formData) {
     return {};

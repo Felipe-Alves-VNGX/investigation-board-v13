@@ -893,26 +893,26 @@ export class CustomDrawing extends Drawing {
     this.stampSprite.position.set(w / 2 + cx, h / 2 + cy);
 
     // Re-add only if not already the topmost child — avoids render tree churn on every refresh
-    if (this.shape.children.at(-1) !== this.stampSprite) {
+    if (this.children.at(-1) !== this.stampSprite) {
       if (this.stampSprite.parent) this.stampSprite.parent.removeChild(this.stampSprite);
-      this.shape.addChild(this.stampSprite);
+      this.addChild(this.stampSprite);
     }
   }
 
   async _doUpdateSprites() {
-    if (!this.shape) return;
+    if (this.destroyed || !this.parent) return;
     const noteData = this.document.flags[MODULE_ID];
     if (!noteData) return;
 
     // Destroy document-only sprites when the note is no longer a document note
     if (noteData.type !== "document") {
       if (this.docTitleText && !this.docTitleText.destroyed) {
-        this.shape.removeChild(this.docTitleText);
+        this.removeChild(this.docTitleText);
         this.docTitleText.destroy();
         this.docTitleText = null;
       }
       if (this.docBodyText && !this.docBodyText.destroyed) {
-        this.shape.removeChild(this.docBodyText);
+        this.removeChild(this.docBodyText);
         this.docBodyText.destroy();
         this.docBodyText = null;
       }
@@ -932,7 +932,7 @@ export class CustomDrawing extends Drawing {
 
       // No background sprite for media (we use photoImageSprite for the cassette)
       if (this.bgSprite) {
-        this.shape.removeChild(this.bgSprite);
+        this.removeChild(this.bgSprite);
         this.bgSprite.destroy();
         this.bgSprite = null;
       }
@@ -940,13 +940,13 @@ export class CustomDrawing extends Drawing {
       if (!this.photoImageSprite || !this.photoImageSprite.parent) {
         if (this.photoImageSprite) this.photoImageSprite.destroy();
         this.photoImageSprite = new PIXI.Sprite();
-        this.shape.addChild(this.photoImageSprite);
+        this.addChild(this.photoImageSprite);
       }
 
       // --- Cassette Shadow ---
       if (!this.bgShadow) {
         this.bgShadow = new PIXI.Sprite();
-        this.shape.addChildAt(this.bgShadow, 0); // Put it behind everything
+        this.addChildAt(this.bgShadow, 0); // Put it behind everything
       }
 
       const fallbackImage = isVideo ? "modules/investigation-board/assets/video1.webp"
@@ -1000,7 +1000,7 @@ export class CustomDrawing extends Drawing {
 
       // Destroy photo sprite if present from a previous type
       if (this.photoImageSprite) {
-        if (this.photoImageSprite.parent) this.shape.removeChild(this.photoImageSprite);
+        if (this.photoImageSprite.parent) this.removeChild(this.photoImageSprite);
         this.photoImageSprite.destroy();
         this.photoImageSprite = null;
       }
@@ -1012,11 +1012,11 @@ export class CustomDrawing extends Drawing {
 
       if (!this.bgSprite) {
         this.bgSprite = new PIXI.Sprite();
-        this.shape.addChild(this.bgSprite);
+        this.addChild(this.bgSprite);
       }
       if (!this.bgShadow) {
         this.bgShadow = new PIXI.Sprite();
-        this.shape.addChildAt(this.bgShadow, 0);
+        this.addChildAt(this.bgShadow, 0);
       }
 
       try {
@@ -1065,7 +1065,7 @@ export class CustomDrawing extends Drawing {
       if (!this.docTitleText || this.docTitleText.destroyed) {
         this.docTitleText = new PIXI.Text(titleStr, titleStyle);
         this.docTitleText.anchor.set(0.5, 0);
-        this.shape.addChild(this.docTitleText);
+        this.addChild(this.docTitleText);
       } else {
         this.docTitleText.style = titleStyle;
         this.docTitleText.text = titleStr;
@@ -1103,7 +1103,7 @@ export class CustomDrawing extends Drawing {
       if (!this.docBodyText || this.docBodyText.destroyed) {
         this.docBodyText = new PIXI.HTMLText(bodyStr, bodyStyle);
         this.docBodyText.anchor.set(0, 0);
-        this.shape.addChild(this.docBodyText);
+        this.addChild(this.docBodyText);
       } else {
         this.docBodyText.style = bodyStyle;
         this.docBodyText.text = bodyStr;
@@ -1120,17 +1120,17 @@ export class CustomDrawing extends Drawing {
     if (noteData.type === "pin") {
       // No background for pin-only
       if (this.bgSprite) {
-        this.shape.removeChild(this.bgSprite);
+        this.removeChild(this.bgSprite);
         this.bgSprite.destroy();
         this.bgSprite = null;
       }
       if (this.bgShadow) {
-        this.shape.removeChild(this.bgShadow);
+        this.removeChild(this.bgShadow);
         this.bgShadow.destroy();
         this.bgShadow = null;
       }
       if (this.photoImageSprite) {
-        this.shape.removeChild(this.photoImageSprite);
+        this.removeChild(this.photoImageSprite);
         this.photoImageSprite.destroy();
         this.photoImageSprite = null;
       }
@@ -1152,7 +1152,7 @@ export class CustomDrawing extends Drawing {
 
       // No background sprite for handouts (transparent)
       if (this.bgSprite) {
-        this.shape.removeChild(this.bgSprite);
+        this.removeChild(this.bgSprite);
         this.bgSprite.destroy();
         this.bgSprite = null;
       }
@@ -1166,7 +1166,7 @@ export class CustomDrawing extends Drawing {
           this.photoImageSprite = null;
         }
         this.photoImageSprite = new PIXI.Sprite();
-        this.shape.addChild(this.photoImageSprite);
+        this.addChild(this.photoImageSprite);
       }
 
       const imagePath = noteData.image || "modules/investigation-board/assets/newhandout.webp";
@@ -1246,13 +1246,13 @@ export class CustomDrawing extends Drawing {
     
     if (!this.bgSprite) {
       this.bgSprite = new PIXI.Sprite();
-      this.shape.addChild(this.bgSprite);
+      this.addChild(this.bgSprite);
     }
 
     // --- Background Shadow ---
     if (!this.bgShadow) {
       this.bgShadow = new PIXI.Sprite();
-      this.shape.addChildAt(this.bgShadow, 0); // Behind the background
+      this.addChildAt(this.bgShadow, 0); // Behind the background
     }
     
     try {
@@ -1300,7 +1300,7 @@ export class CustomDrawing extends Drawing {
       if (!this.photoImageSprite || this.photoImageSprite.destroyed) {
         if (this.photoImageSprite) this.photoImageSprite = null;
         this.photoImageSprite = new PIXI.Sprite();
-        this.shape.addChild(this.photoImageSprite);
+        this.addChild(this.photoImageSprite);
       }
       try {
         const texture = await PIXI.Assets.load(fgImage);
@@ -1343,7 +1343,7 @@ export class CustomDrawing extends Drawing {
           // Apply Mask to clip overflow
           if (!this.photoMask) {
             this.photoMask = new PIXI.Graphics();
-            this.shape.addChild(this.photoMask);
+            this.addChild(this.photoMask);
           }
           this.photoMask.clear();
           this.photoMask.beginFill(0xffffff);
@@ -1394,7 +1394,7 @@ export class CustomDrawing extends Drawing {
     if (!this.noteText || this.noteText.destroyed) {
       this.noteText = new PIXI.Text(truncatedText, textStyle);
       this.noteText.anchor.set(0.5);
-      this.shape.addChild(this.noteText);
+      this.addChild(this.noteText);
     } else {
       this.noteText.anchor.set(0.5); // reset in case this sprite was previously used by a document note
       this.noteText.style = textStyle;

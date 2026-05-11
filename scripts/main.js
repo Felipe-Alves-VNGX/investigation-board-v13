@@ -149,62 +149,66 @@ function _getPlaylistSoundFromLi(li) {
 }
 
 Hooks.on("getSceneControlButtons", (controls) => {
-  // Add Investigation Board tools to the existing drawings control
-  if (controls.drawings && controls.drawings.tools) {
-    // Add a separator for visual grouping (optional)
-    controls.drawings.tools.createStickyNote = {
-      name: "createStickyNote",
-      title: "Create Sticky Note",
-      icon: "fas fa-sticky-note",
-      onChange: () => createNote("sticky"),
-      button: true
-    };
+  // v13: controls is an array; find the drawings entry
+  const drawings = Array.isArray(controls)
+    ? controls.find(c => c.name === "drawings")
+    : controls.drawings;
+  if (!drawings) return;
 
-    controls.drawings.tools.createPhotoNote = {
-      name: "createPhotoNote",
-      title: "Create Photo Note",
-      icon: "fa-solid fa-camera-polaroid",
-      onChange: () => createNote("photo"),
-      button: true
-    };
+  // v13 tools is an array; v14 used an object. Support both for safety.
+  const pushTool = (tool) => {
+    if (Array.isArray(drawings.tools)) drawings.tools.push(tool);
+    else drawings.tools[tool.name] = tool;
+  };
 
-    controls.drawings.tools.createIndexCard = {
-      name: "createIndexCard",
-      title: "Create Index Card",
-      icon: "fa-regular fa-subtitles",
-      onChange: () => createNote("index"),
-      button: true
-    };
-
-    controls.drawings.tools.createHandout = {
-      name: "createHandout",
-      title: "Create Handout Note",
-      icon: "fas fa-file-image",
-      onChange: () => createNote("handout"),
-      button: true
-    };
-
-    controls.drawings.tools.createMediaNote = {
-      name: "createMediaNote",
-      title: "Create Media Note",
-      icon: "fas fa-cassette-tape",
-      onChange: () => createNote("media"),
-      button: true
-    };
-
-    controls.drawings.tools.createPinOnly = {
-      name: "createPinOnly",
-      title: "Create Pin Only",
-      icon: "fas fa-thumbtack",
-      onChange: () => createNote("pin"),
-      button: true
-    };
-  }
+  pushTool({
+    name: "createStickyNote",
+    title: "Create Sticky Note",
+    icon: "fas fa-sticky-note",
+    button: true,
+    onClick: () => createNote("sticky")
+  });
+  pushTool({
+    name: "createPhotoNote",
+    title: "Create Photo Note",
+    icon: "fa-solid fa-camera-polaroid",
+    button: true,
+    onClick: () => createNote("photo")
+  });
+  pushTool({
+    name: "createIndexCard",
+    title: "Create Index Card",
+    icon: "fa-regular fa-subtitles",
+    button: true,
+    onClick: () => createNote("index")
+  });
+  pushTool({
+    name: "createHandout",
+    title: "Create Handout Note",
+    icon: "fas fa-file-image",
+    button: true,
+    onClick: () => createNote("handout")
+  });
+  pushTool({
+    name: "createMediaNote",
+    title: "Create Media Note",
+    icon: "fas fa-cassette-tape",
+    button: true,
+    onClick: () => createNote("media")
+  });
+  pushTool({
+    name: "createPinOnly",
+    title: "Create Pin Only",
+    icon: "fas fa-thumbtack",
+    button: true,
+    onClick: () => createNote("pin")
+  });
 });
 
 // Hook to handle Investigation Board mode activation/deactivation
-Hooks.on("renderSceneControls", (controls, html) => {
-  const activeControl = controls.control?.name;
+Hooks.on("renderSceneControls", () => {
+  // v13: read active control from ui.controls instead of the hook arg
+  const activeControl = ui.controls?.activeControl ?? ui.controls?.control?.name;
 
   if (activeControl === "drawings") {
     activateInvestigationBoardMode();
