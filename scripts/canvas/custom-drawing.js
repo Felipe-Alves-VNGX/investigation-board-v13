@@ -120,48 +120,43 @@ export class CustomDrawing extends Drawing {
   }
 
   /**
-   * Override _refreshState to hide selection handles for all non-handout IB notes.
-   * In v14, Drawing uses DrawingShapeControls (this.controls) for selection/resize handles.
-   * _refreshFrame() was deprecated in v14 and no longer called automatically.
+   * v13: Drawing uses this.frame (PIXI.Container) with handleContainer for selection
+   * handles. _refreshFrame() is called by Foundry on every refresh tick.
    */
-  _refreshState() {
-    super._refreshState();
+  _refreshFrame(options) {
+    super._refreshFrame?.(options);
     const noteData = this.document.flags?.[MODULE_ID];
     if (!noteData?.type) return;
 
-    // Handout keeps full controls — leave Foundry's defaults untouched.
+    // Handout keeps full controls — leave Foundry defaults untouched.
     if (noteData.type === "handout") return;
 
-    // Pin notes never show a bounding box regardless of settings.
+    // Pin notes never show a bounding box.
     if (noteData.type === "pin") {
-      if (this.controls) this.controls.visible = false;
+      if (this.frame) this.frame.visible = false;
       return;
     }
 
-    if (!this.controls) return;
+    if (!this.frame) return;
 
     const showControls = game.settings.get(MODULE_ID, "showSelectionControls");
     if (!showControls) {
-      // Default behaviour: no bounding box or handles for IB notes
-      this.controls.visible = false;
+      this.frame.visible = false;
       return;
     }
 
-    // Let Foundry's super manage controls.visible (hover/selected state).
-    // Per-handle filtering is enforced by the patch in draw() so it survives
-    // any subsequent controls._refresh() calls triggered by position/rotation changes.
     this._applyHandleVisibility();
   }
 
   /**
-   * Hides scale and translate handles, leaving only the rotate handle visible.
-   * Also hides scale handles when allowScaling is off.
-   * Called from _refreshState and from the patched controls._refresh.
+   * v13: handles live in this.frame.handleContainer.children. Each handle has a
+   * `name` matching "rotate", "scale", "scaleX", "scaleY", "translate".
    */
   _applyHandleVisibility() {
-    if (!this.controls?.handles) return;
+    const handles = this.frame?.handleContainer?.children;
+    if (!handles) return;
     const allowScaling = game.settings.get(MODULE_ID, "allowScaling");
-    for (const handle of this.controls.handles.children) {
+    for (const handle of handles) {
       switch (handle.name) {
         case "rotate":
           handle.visible = true;
@@ -173,7 +168,7 @@ export class CustomDrawing extends Drawing {
           handle.visible = allowScaling;
           handle.cursor = 'pointer';
           break;
-        default: // "translate" and anything else
+        default:
           handle.visible = false;
           break;
       }
@@ -717,20 +712,8 @@ export class CustomDrawing extends Drawing {
 
     this.element?.setAttribute("data-investigation-note", "true");
 
-    // Patch this.controls._refresh (created fresh each draw() by Foundry) so that
-    // our per-handle visibility is reapplied after every Foundry controls refresh.
-    // This prevents position/rotation updates from resetting handle visibility.
-    const noteType = this.document.flags[MODULE_ID]?.type;
-    if (this.controls && noteType && noteType !== "handout" && noteType !== "pin") {
-      const originalRefresh = this.controls._refresh.bind(this.controls);
-      const self = this;
-      this.controls._refresh = function() {
-        originalRefresh();
-        if (game.settings.get(MODULE_ID, "showSelectionControls")) {
-          self._applyHandleVisibility();
-        }
-      };
-    }
+    // v13: _refreshFrame is called automatically on every refresh by Foundry,
+    // so per-handle visibility is reapplied naturally. No monkey-patch needed.
 
     await this._updateSprites();
     import("./connection-manager.js").then(m => {
