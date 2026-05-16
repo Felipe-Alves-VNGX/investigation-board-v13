@@ -137,7 +137,7 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
   }
 
   // Get default text from settings (fallback if missing)
-  const defaultText = (noteType === "handout" || noteType === "pin" || noteType === "document")
+  const defaultText = (noteType === "handout" || noteType === "pin" || noteType === "document" || noteType === "device")
                     ? ""
                     : (game.settings.get(MODULE_ID, `${noteType}NoteDefaultText`) || "Notes");
 
