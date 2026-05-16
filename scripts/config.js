@@ -62,6 +62,51 @@ export const DOC_BACKGROUNDS = {
 };
 
 /**
+ * Device note types.
+ *
+ * Each entry defines the device form factor used by the DevicePlayer window.
+ * cssClass is applied to the .ib-device-frame element for CSS-based styling.
+ * When frame artwork is ready, add:
+ *   backgroundImage — "modules/investigation-board/assets/devices/<key>.webp"
+ */
+export const DEVICE_TYPES = {
+  smartphone: {
+    label: 'Smartphone',
+    icon: 'fas fa-mobile-alt',
+    windowWidth: 380,
+    windowHeight: 700,
+    cssClass: 'ib-device-smartphone',
+    canvasWidth: 200,
+    canvasHeight: 350,
+  },
+  tablet: {
+    label: 'Tablet',
+    icon: 'fas fa-tablet-alt',
+    windowWidth: 600,
+    windowHeight: 820,
+    cssClass: 'ib-device-tablet',
+    canvasWidth: 300,
+    canvasHeight: 400,
+  },
+  laptop2000s: {
+    label: 'Laptop Anos 2000',
+    icon: 'fas fa-laptop',
+    windowWidth: 760,
+    windowHeight: 560,
+    cssClass: 'ib-device-laptop2000s',
+    canvasWidth: 350,
+    canvasHeight: 250,
+  },
+};
+
+export const DEVICE_APPS = {
+  sms:     { label: 'Mensagens', icon: 'fas fa-comment-alt', key: 'sms' },
+  gallery: { label: 'Galeria',   icon: 'fas fa-images',      key: 'gallery' },
+  notes:   { label: 'Notas',     icon: 'fas fa-sticky-note', key: 'notes' },
+  email:   { label: 'E-mail',    icon: 'fas fa-envelope',    key: 'email' },
+};
+
+/**
  * Video player window formats.
  *
  * Each entry defines:

@@ -1,0 +1,122 @@
+<div class="ib-device-frame {{deviceTypeDef.cssClass}}">
+  <div class="ib-device-notch"></div>
+  <div class="ib-device-screen">
+    {{#if currentApp}}
+
+      {{!-- App screen --}}
+      <div class="ib-app-header">
+        <button type="button" class="ib-back-btn" title="Voltar">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <span class="ib-app-header-title">{{appTitle}}</span>
+      </div>
+
+      {{!-- SMS App --}}
+      {{#if (eq currentApp "sms")}}
+      <div class="ib-app-content ib-app-sms">
+        <div class="ib-sms-contact-bar">
+          <i class="fas fa-user-circle"></i>
+          <span>{{appData.contactName}}</span>
+        </div>
+        <div class="ib-sms-messages">
+          {{#each appData.messages}}
+          <div class="ib-sms-message-row {{#if (eq sender "me")}}from-me{{else}}from-contact{{/if}}">
+            <div class="ib-sms-bubble">
+              <span class="ib-sms-text">{{text}}</span>
+              {{#if time}}<span class="ib-sms-time">{{time}}</span>{{/if}}
+            </div>
+          </div>
+          {{/each}}
+          {{#unless appData.messages.length}}
+          <p class="ib-app-empty">Nenhuma mensagem.</p>
+          {{/unless}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{!-- Gallery App --}}
+      {{#if (eq currentApp "gallery")}}
+      <div class="ib-app-content ib-app-gallery">
+        {{#if galleryCurrentImage}}
+        <div class="ib-gallery-viewer">
+          <img src="{{galleryCurrentImage}}" alt="Foto {{galleryIndex}}">
+          {{#if galleryHasPrev}}
+          <button type="button" class="ib-gallery-nav prev"><i class="fas fa-chevron-left"></i></button>
+          {{/if}}
+          {{#if galleryHasNext}}
+          <button type="button" class="ib-gallery-nav next"><i class="fas fa-chevron-right"></i></button>
+          {{/if}}
+        </div>
+        <div class="ib-gallery-counter">{{galleryIndex}} / {{galleryImages.length}}</div>
+        {{else}}
+        <p class="ib-app-empty">Nenhuma imagem na galeria.</p>
+        {{/if}}
+      </div>
+      {{/if}}
+
+      {{!-- Notes App --}}
+      {{#if (eq currentApp "notes")}}
+      <div class="ib-app-content ib-app-notes">
+        {{#if appData.content}}
+        <div class="ib-notes-body">{{appData.content}}</div>
+        {{else}}
+        <p class="ib-app-empty">Nota vazia.</p>
+        {{/if}}
+      </div>
+      {{/if}}
+
+      {{!-- Email App --}}
+      {{#if (eq currentApp "email")}}
+      <div class="ib-app-content ib-app-email">
+        {{#if appData.from}}
+        <div class="ib-email-card">
+          <div class="ib-email-meta">
+            <div class="ib-email-avatar"><i class="fas fa-user"></i></div>
+            <div class="ib-email-header-info">
+              <span class="ib-email-from">{{appData.from}}</span>
+              {{#if appData.date}}<span class="ib-email-date">{{appData.date}}</span>{{/if}}
+            </div>
+          </div>
+          {{#if appData.subject}}
+          <div class="ib-email-subject">{{appData.subject}}</div>
+          {{/if}}
+          <div class="ib-email-body">{{appData.body}}</div>
+        </div>
+        {{else}}
+        <p class="ib-app-empty">Nenhum e-mail.</p>
+        {{/if}}
+      </div>
+      {{/if}}
+
+    {{else}}
+
+      {{!-- Home Screen --}}
+      <div class="ib-home-screen">
+        <div class="ib-home-status-bar">
+          <span class="ib-status-time">{{title}}</span>
+          <span class="ib-status-icons"><i class="fas fa-signal"></i> <i class="fas fa-battery-three-quarters"></i></span>
+        </div>
+        <div class="ib-app-grid">
+          {{#each enabledApps}}
+          <div class="ib-app-icon" data-app="{{key}}" title="{{label}}">
+            <div class="ib-app-icon-bg">
+              <i class="{{icon}}"></i>
+            </div>
+            <span class="ib-app-label">{{label}}</span>
+          </div>
+          {{/each}}
+          {{#unless enabledApps.length}}
+          <p class="ib-home-empty">Nenhum app configurado.<br>Edite a nota para adicionar conteúdo.</p>
+          {{/unless}}
+        </div>
+      </div>
+
+    {{/if}}
+  </div>
+  {{#if (eq deviceTypeDef.cssClass "ib-device-laptop2000s")}}
+  <div class="ib-laptop-base">
+    <div class="ib-laptop-keyboard"></div>
+    <div class="ib-laptop-trackpad"></div>
+  </div>
+  {{/if}}
+</div>

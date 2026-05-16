@@ -388,6 +388,98 @@
 
   {{/if}}{{!-- /media --}}
 
+  {{!-- Device Configuration --}}
+  {{#if (eq noteType "device")}}
+  <fieldset class="ib-device-config">
+    <legend><i class="fas fa-mobile-alt"></i> Dispositivo</legend>
+
+    <div class="form-group">
+      <label>Tipo de Dispositivo</label>
+      <select name="deviceType">
+        {{#each deviceTypes}}
+        <option value="{{@key}}" {{#if (eq ../deviceType @key)}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <nav class="ib-device-app-tabs">
+      <button type="button" class="ib-tab-btn active" data-tab="sms"><i class="fas fa-comment-alt"></i> SMS</button>
+      <button type="button" class="ib-tab-btn" data-tab="gallery"><i class="fas fa-images"></i> Galeria</button>
+      <button type="button" class="ib-tab-btn" data-tab="notes"><i class="fas fa-sticky-note"></i> Notas</button>
+      <button type="button" class="ib-tab-btn" data-tab="email"><i class="fas fa-envelope"></i> E-mail</button>
+    </nav>
+
+    {{!-- SMS Panel --}}
+    <div class="ib-tab-panel active" data-panel="sms">
+      <label class="ib-app-enable-label">
+        <input type="checkbox" name="sms.enabled" {{#if deviceApps.sms.enabled}}checked{{/if}} />
+        Habilitar app de Mensagens
+      </label>
+      <div class="form-group">
+        <label>Nome do Contato</label>
+        <input type="text" name="sms.contactName" value="{{deviceApps.sms.contactName}}" placeholder="Ex: João" />
+      </div>
+      <div class="form-group">
+        <label>Mensagens</label>
+        <textarea name="sms.messages" rows="7" placeholder="contato: Oi, tudo bem?&#10;eu: Tudo ótimo! [14:22]&#10;contato: Nos encontramos amanhã?">{{smsMessagesText}}</textarea>
+        <small class="ib-hint">Uma mensagem por linha. Formato: <code>eu:</code> ou <code>contato:</code> seguido do texto. Horário opcional: <code>[HH:MM]</code> no final.</small>
+      </div>
+    </div>
+
+    {{!-- Gallery Panel --}}
+    <div class="ib-tab-panel" data-panel="gallery">
+      <label class="ib-app-enable-label">
+        <input type="checkbox" name="gallery.enabled" {{#if deviceApps.gallery.enabled}}checked{{/if}} />
+        Habilitar Galeria de Fotos
+      </label>
+      <div class="form-group">
+        <label>Imagens (um caminho por linha)</label>
+        <textarea name="gallery.images" rows="5" placeholder="modules/meu-modulo/imagem1.webp&#10;worlds/minha-campanha/foto2.jpg">{{#each deviceApps.gallery.images}}{{this}}&#10;{{/each}}</textarea>
+        <button type="button" class="ib-gallery-browse-btn">
+          <i class="fas fa-folder-open"></i> Adicionar Imagem
+        </button>
+      </div>
+    </div>
+
+    {{!-- Notes Panel --}}
+    <div class="ib-tab-panel" data-panel="notes">
+      <label class="ib-app-enable-label">
+        <input type="checkbox" name="notes.enabled" {{#if deviceApps.notes.enabled}}checked{{/if}} />
+        Habilitar App de Notas
+      </label>
+      <div class="form-group">
+        <label>Conteúdo</label>
+        <textarea name="notes.content" rows="8" placeholder="Escreva o conteúdo da nota...">{{deviceApps.notes.content}}</textarea>
+      </div>
+    </div>
+
+    {{!-- Email Panel --}}
+    <div class="ib-tab-panel" data-panel="email">
+      <label class="ib-app-enable-label">
+        <input type="checkbox" name="email.enabled" {{#if deviceApps.email.enabled}}checked{{/if}} />
+        Habilitar E-mail
+      </label>
+      <div class="form-group">
+        <label>De</label>
+        <input type="text" name="email.from" value="{{deviceApps.email.from}}" placeholder="remetente@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Assunto</label>
+        <input type="text" name="email.subject" value="{{deviceApps.email.subject}}" placeholder="Assunto do e-mail" />
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="text" name="email.date" value="{{deviceApps.email.date}}" placeholder="15/03/2024 09:41" />
+      </div>
+      <div class="form-group">
+        <label>Corpo</label>
+        <textarea name="email.body" rows="6" placeholder="Corpo do e-mail...">{{deviceApps.email.body}}</textarea>
+      </div>
+    </div>
+
+  </fieldset>
+  {{/if}}{{!-- /device --}}
+
   {{!-- Image Path — photo and handout only, sensitive --}}
   {{#if (and canViewSensitive (or (eq noteType "photo") (eq noteType "handout")))}}
     <div class="form-group" style="display: block;">

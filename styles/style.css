@@ -2025,3 +2025,558 @@ body.investigation-board-mode .drawing:not([data-investigation-note='true']) {
 .ib-preview-video-btn:hover {
   background: #1a4a73;
 }
+
+/* ============================================================
+   DEVICE PLAYER — floating device window
+   ============================================================ */
+
+.ib-device-player .window-content {
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Device frames ---- */
+.ib-device-frame {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: 36px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+
+/* Smartphone — dark slim slab */
+.ib-device-smartphone {
+  width: 320px;
+  height: 640px;
+  background: linear-gradient(160deg, #2a2a2a 0%, #111 100%);
+  border: 6px solid #3a3a3a;
+  padding: 44px 10px 52px;
+}
+
+/* Notch (smartphone only) */
+.ib-device-smartphone .ib-device-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 20px;
+  background: #111;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+/* Tablet — wider, thinner bezel */
+.ib-device-tablet {
+  width: 520px;
+  height: 720px;
+  background: linear-gradient(160deg, #2e2e2e 0%, #1a1a1a 100%);
+  border: 10px solid #3a3a3a;
+  border-radius: 20px;
+  padding: 24px 16px;
+}
+
+.ib-device-tablet .ib-device-notch {
+  display: none;
+}
+
+/* Laptop 2000s — beige/gray plastic aesthetic */
+.ib-device-laptop2000s {
+  width: 680px;
+  height: 440px;
+  background: #ccc4b8;
+  border: 14px solid #b8b0a4;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 10px 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.ib-device-laptop2000s .ib-device-notch {
+  display: none;
+}
+
+.ib-laptop-base {
+  width: 100%;
+  background: #bfb8ac;
+  border: 10px solid #aaa49a;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 12px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ib-laptop-keyboard {
+  width: 90%;
+  height: 60px;
+  background: repeating-linear-gradient(
+    90deg,
+    #a8a09a 0px, #a8a09a 12px,
+    #b8b0a8 12px, #b8b0a8 14px
+  );
+  border-radius: 4px;
+  border: 1px solid #999;
+}
+
+.ib-laptop-trackpad {
+  width: 100px;
+  height: 32px;
+  background: #b0a89c;
+  border: 1px solid #999;
+  border-radius: 4px;
+}
+
+/* ---- Device screen ---- */
+.ib-device-screen {
+  width: 100%;
+  height: 100%;
+  background: #0d0d0d;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ---- Home screen ---- */
+.ib-home-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(170deg, #0f2027, #203a43, #2c5364);
+  overflow: hidden;
+}
+
+.ib-home-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px 4px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+}
+
+.ib-status-icons {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.ib-app-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 16px 8px;
+  align-content: start;
+}
+
+.ib-app-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 12px;
+  transition: background 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ib-app-icon:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.ib-app-icon:active {
+  background: rgba(255,255,255,0.22);
+  transform: scale(0.94);
+}
+
+.ib-app-icon-bg {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.ib-app-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.ib-home-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+/* ---- App screen common ---- */
+.ib-app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  background: rgba(0,0,0,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ib-back-btn {
+  background: none;
+  border: none;
+  color: #4a9eff;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.ib-back-btn:hover {
+  color: #79bcff;
+}
+
+.ib-app-header-title {
+  flex: 1;
+}
+
+.ib-app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ib-app-empty {
+  text-align: center;
+  color: rgba(255,255,255,0.35);
+  font-size: 12px;
+  padding: 32px 16px;
+}
+
+/* ---- SMS App ---- */
+.ib-app-sms {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.ib-sms-contact-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #111;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border-bottom: 1px solid #222;
+}
+
+.ib-sms-contact-bar i {
+  font-size: 1.4rem;
+  color: #555;
+}
+
+.ib-sms-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 10px;
+  overflow-y: auto;
+}
+
+.ib-sms-message-row {
+  display: flex;
+}
+
+.ib-sms-message-row.from-me {
+  justify-content: flex-end;
+}
+
+.ib-sms-message-row.from-contact {
+  justify-content: flex-start;
+}
+
+.ib-sms-bubble {
+  max-width: 78%;
+  padding: 8px 12px 6px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.from-me .ib-sms-bubble {
+  background: #0b93f6;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.from-contact .ib-sms-bubble {
+  background: #262626;
+  color: #e8e8e8;
+  border-bottom-left-radius: 4px;
+}
+
+.ib-sms-text {
+  word-break: break-word;
+}
+
+.ib-sms-time {
+  font-size: 10px;
+  opacity: 0.6;
+  align-self: flex-end;
+}
+
+/* ---- Gallery App ---- */
+.ib-app-gallery {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.ib-gallery-viewer {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ib-gallery-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.ib-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.ib-gallery-nav:hover {
+  background: rgba(0,0,0,0.8);
+}
+
+.ib-gallery-nav.prev { left: 8px; }
+.ib-gallery-nav.next { right: 8px; }
+
+.ib-gallery-counter {
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+/* ---- Notes App ---- */
+.ib-app-notes {
+  background: #fffef0;
+  padding: 16px;
+}
+
+.ib-notes-body {
+  color: #1a1a1a;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Courier New', monospace;
+}
+
+/* ---- Email App ---- */
+.ib-app-email {
+  background: #0d0d0d;
+  padding: 12px;
+}
+
+.ib-email-card {
+  background: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ib-email-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.ib-email-avatar {
+  width: 36px;
+  height: 36px;
+  background: #333;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ib-email-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ib-email-from {
+  color: #ddd;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ib-email-date {
+  color: #666;
+  font-size: 10px;
+}
+
+.ib-email-subject {
+  padding: 8px 14px;
+  color: #eee;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid #222;
+}
+
+.ib-email-body {
+  padding: 12px 14px;
+  color: #bbb;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   DEVICE CONFIG — drawing-sheet.html fieldset
+   ============================================================ */
+
+.ib-device-config {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  background: #fafafa;
+}
+
+.ib-device-config legend {
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 6px;
+  color: #444;
+}
+
+.ib-device-app-tabs {
+  display: flex;
+  gap: 0;
+  margin: 10px 0 0;
+  border-bottom: 2px solid #ddd;
+}
+
+.ib-device-app-tabs .ib-tab-btn {
+  flex: 1;
+  padding: 5px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 11px;
+  color: #777;
+  cursor: pointer;
+  white-space: nowrap;
+  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ib-device-app-tabs .ib-tab-btn.active {
+  color: #2a6099;
+  border-bottom-color: #2a6099;
+  font-weight: 700;
+}
+
+.ib-app-enable-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin: 8px 0 6px;
+}
+
+.ib-gallery-browse-btn {
+  margin-top: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  color: #333;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ib-gallery-browse-btn:hover {
+  background: #e4e4e4;
+}
+
+.ib-hint {
+  display: block;
+  color: #888;
+  font-size: 10px;
+  margin-top: 3px;
+  line-height: 1.4;
+}
