@@ -100,22 +100,20 @@ export class CustomDrawing extends Drawing {
   }
 
   /**
-   * Override _refreshVisibility so Foundry dims hidden IB notes for the GM.
-   * v13 calls _refreshVisibility() every render tick — setting this.alpha here
-   * is the correct hook point; setting it elsewhere gets overridden each frame.
+   * Override _canConfigure to allow all users to access the configuration and context menus.
    */
-  _refreshVisibility() {
-    super._refreshVisibility?.();
+  _canConfigure(user, event) {
     const noteData = this.document.flags?.[MODULE_ID];
-    if (noteData?.type && this.document.hidden && game.user.isGM) {
-      this.alpha = 0.4;
+    if (noteData?.type) {
+      return true;
     }
+    return super._canConfigure(user, event);
   }
 
   /**
-   * Override _refreshFrame to hide the selection frame for non-handout IB notes.
-   * In v13, Drawing uses this.frame (a PIXI.Container) for the selection border.
-   * _refreshFrame() is called automatically by Foundry on every render tick.
+   * Override _getTargetAlpha so Foundry's _refreshState() dims hidden IB notes for the GM.
+   * _refreshState() calls this.alpha = this._getTargetAlpha() every render tick, so this is
+   * the correct hook point — setting this.alpha manually elsewhere gets overridden each frame.
    */
   _getTargetAlpha() {
     const noteData = this.document.flags?.[MODULE_ID];
