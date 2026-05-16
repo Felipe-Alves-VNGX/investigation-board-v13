@@ -4,6 +4,8 @@ import {
   INK_COLORS,
   VIDEO_FORMATS,
   DOC_BACKGROUNDS,
+  DEVICE_TYPES,
+  DEVICE_APPS,
 } from '../config.js';
 import { getAvailablePinFiles } from '../utils/helpers.js';
 import { collaborativeUpdate } from '../utils/socket-handler.js';
@@ -24,7 +26,7 @@ import {
 // v13 namespaced imports
 const DrawingConfig = foundry.applications.sheets.DrawingConfig;
 const FilePicker = foundry.applications.apps.FilePicker.implementation;
-const TextEditor = foundry.applications.ux.TextEditor.implementation;
+const TextEditor = foundry.applications.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
 
 export class CustomDrawingSheet extends DrawingConfig {
   constructor(...args) {
@@ -93,6 +95,11 @@ export class CustomDrawingSheet extends DrawingConfig {
     context.title = customData.title;
     context.docBackground = customData.docBackground;
     context.docBackgrounds = DOC_BACKGROUNDS;
+    // Device fields
+    context.deviceType = customData.deviceType;
+    context.deviceTypes = customData.deviceTypes;
+    context.deviceApps = customData.deviceApps;
+    context.smsMessagesText = customData.smsMessagesText;
 
     // Enrich the linked object for display
     context.enrichedLinkedObject = context.linkedObject
@@ -143,6 +150,7 @@ export class CustomDrawingSheet extends DrawingConfig {
             handout: 'Handout',
             media: 'Media Note',
             document: 'Document Note',
+            device: 'Device Note',
           };
           targetLabel = typeLabels[targetData.type] || 'Note';
         }
@@ -231,6 +239,23 @@ export class CustomDrawingSheet extends DrawingConfig {
       // Document fields
       title: ibFlags.title || '',
       docBackground: ibFlags.docBackground || 'parchment',
+      // Device fields
+      deviceType: ibFlags.deviceType || 'smartphone',
+      deviceTypes: DEVICE_TYPES,
+      deviceApps: (() => {
+        const defaultApps = {
+          sms:     { enabled: false, contactName: 'Desconhecido', messages: [] },
+          gallery: { enabled: false, images: [] },
+          notes:   { enabled: false, content: '' },
+          email:   { enabled: false, from: '', subject: '', date: '', body: '' },
+        };
+        return foundry.utils.mergeObject(defaultApps, ibFlags.deviceApps || {}, { inplace: false });
+      })(),
+      // Serialize SMS messages as plain text for the textarea (one per line)
+      smsMessagesText: (() => {
+        const msgs = ibFlags.deviceApps?.sms?.messages || [];
+        return msgs.map(m => `${m.sender === 'me' ? 'eu' : 'contato'}: ${m.text}${m.time ? ` [${m.time}]` : ''}`).join('\n');
+      })(),
     };
     return data;
   }
@@ -678,6 +703,23 @@ export class CustomDrawingSheet extends DrawingConfig {
       });
     });
 
+    // Gallery image browser for device notes
+    const galleryBrowseBtn = this.element.querySelector('.ib-gallery-browse-btn');
+    if (galleryBrowseBtn) {
+      galleryBrowseBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const textarea = this.element.querySelector("[name='gallery.images']");
+        new FilePicker({
+          type: 'image',
+          callback: (path) => {
+            if (!textarea) return;
+            const existing = textarea.value.trim();
+            textarea.value = existing ? `${existing}\n${path}` : path;
+          },
+        }).browse('');
+      });
+    }
+
     const form = this.element.querySelector('form');
     if (form) {
       // Handle cancel button
@@ -730,7 +772,8 @@ export class CustomDrawingSheet extends DrawingConfig {
           if (
             noteType !== 'handout' &&
             noteType !== 'media' &&
-            noteType !== 'pin'
+            noteType !== 'pin' &&
+            noteType !== 'device'
           ) {
             updates[`flags.${MODULE_ID}.text`] = data.text || '';
           }
@@ -816,15 +859,71 @@ export class CustomDrawingSheet extends DrawingConfig {
             updates[`flags.${MODULE_ID}.docBackground`] = data.docBackground || 'parchment';
           }
 
+          if (noteType === 'device') {
+            const newDeviceType = data.deviceType || 'smartphone';
+            updates[`flags.${MODULE_ID}.deviceType`] = newDeviceType;
+
+            // Parse SMS messages from textarea (format: "eu: texto [HH:MM]" or "contato: texto [HH:MM]")
+            const rawSms = (data['sms.messages'] || '').trim();
+            const messages = rawSms ? rawSms.split('\n').filter(l => l.trim()).map(line => {
+              const timeMatch = line.match(/\[(\d{1,2}:\d{2})\]\s*$/);
+              const time = timeMatch ? timeMatch[1] : '';
+              const withoutTime = line.replace(/\[[\d:]+\]\s*$/, '').trim();
+              const colonIdx = withoutTime.indexOf(':');
+              if (colonIdx < 0) return null;
+              const prefix = withoutTime.slice(0, colonIdx).trim().toLowerCase();
+              const text = withoutTime.slice(colonIdx + 1).trim();
+              const sender = (prefix === 'eu' || prefix === 'me') ? 'me' : 'contact';
+              return text ? { sender, text, time } : null;
+            }).filter(Boolean) : [];
+
+            // Parse gallery images from textarea (one path per line)
+            const rawImages = (data['gallery.images'] || '').trim();
+            const images = rawImages ? rawImages.split('\n').map(l => l.trim()).filter(Boolean) : [];
+
+            updates[`flags.${MODULE_ID}.deviceApps`] = {
+              sms: {
+                enabled: !!data['sms.enabled'],
+                contactName: data['sms.contactName'] || 'Desconhecido',
+                messages,
+              },
+              gallery: {
+                enabled: !!data['gallery.enabled'],
+                images,
+              },
+              notes: {
+                enabled: !!data['notes.enabled'],
+                content: data['notes.content'] || '',
+              },
+              email: {
+                enabled: !!data['email.enabled'],
+                from: data['email.from'] || '',
+                subject: data['email.subject'] || '',
+                date: data['email.date'] || '',
+                body: data['email.body'] || '',
+              },
+            };
+
+            // Resize canvas note if device type changed
+            const prevDeviceType = this.document.flags[MODULE_ID]?.deviceType || 'smartphone';
+            if (newDeviceType !== prevDeviceType) {
+              const DEVICE_DIMS = { smartphone: [200, 350], tablet: [300, 400], laptop2000s: [350, 250] };
+              const [w, h] = DEVICE_DIMS[newDeviceType] || [200, 350];
+              updates['shape.width'] = w;
+              updates['shape.height'] = h;
+            }
+          }
+
           if (data.linkedObject !== undefined) {
             updates[`flags.${MODULE_ID}.linkedObject`] = data.linkedObject;
           }
 
-          // Save font and fontSize to note flags (skip for handouts, media, and pins)
+          // Save font and fontSize to note flags (skip for handouts, media, pins, and devices)
           if (
             noteType !== 'handout' &&
             noteType !== 'media' &&
-            noteType !== 'pin'
+            noteType !== 'pin' &&
+            noteType !== 'device'
           ) {
             if (data.font !== undefined) {
               updates[`flags.${MODULE_ID}.font`] = data.font;

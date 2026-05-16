@@ -1,9 +1,10 @@
-import { MODULE_ID, SOCKET_NAME, VIDEO_EXTENSIONS, DOC_BACKGROUNDS } from "../config.js";
+import { MODULE_ID, SOCKET_NAME, VIDEO_EXTENSIONS, DOC_BACKGROUNDS, DEVICE_TYPES } from "../config.js";
 import { InvestigationBoardState } from "../state.js";
 import { collaborativeUpdate, collaborativeDelete, socket, activeGlobalSounds, activeVideoBroadcasts } from "../utils/socket-handler.js";
 import { truncateText, resolvePinImage, getAvailablePinFiles, resolveStampImage, getAvailableStampFiles } from "../utils/helpers.js";
 import { NotePreviewer } from "../apps/note-previewer.js";
 import { VideoPlayer } from "../apps/video-player.js";
+import { DevicePlayer } from "../apps/device-player.js";
 import { drawAllConnectionLines } from "./connection-manager.js";
 
 // v13 namespaced imports
@@ -21,6 +22,7 @@ export class CustomDrawing extends Drawing {
     this.photoImageSprite = null;
     this.photoMask = null;
     this.stampSprite = null;
+    this.deviceIconText = null;
   }
 
   /**
@@ -98,20 +100,22 @@ export class CustomDrawing extends Drawing {
   }
 
   /**
-   * Override _canConfigure to allow all users to access the configuration and context menus.
+   * Override _refreshVisibility so Foundry dims hidden IB notes for the GM.
+   * v13 calls _refreshVisibility() every render tick — setting this.alpha here
+   * is the correct hook point; setting it elsewhere gets overridden each frame.
    */
-  _canConfigure(user, event) {
+  _refreshVisibility() {
+    super._refreshVisibility?.();
     const noteData = this.document.flags?.[MODULE_ID];
-    if (noteData?.type) {
-      return true;
+    if (noteData?.type && this.document.hidden && game.user.isGM) {
+      this.alpha = 0.4;
     }
-    return super._canConfigure(user, event);
   }
 
   /**
-   * Override _getTargetAlpha so Foundry's _refreshState() dims hidden IB notes for the GM.
-   * _refreshState() calls this.alpha = this._getTargetAlpha() every render tick, so this is
-   * the correct hook point — setting this.alpha manually elsewhere gets overridden each frame.
+   * Override _refreshFrame to hide the selection frame for non-handout IB notes.
+   * In v13, Drawing uses this.frame (a PIXI.Container) for the selection border.
+   * _refreshFrame() is called automatically by Foundry on every render tick.
    */
   _getTargetAlpha() {
     const noteData = this.document.flags?.[MODULE_ID];
@@ -173,6 +177,8 @@ export class CustomDrawing extends Drawing {
           break;
       }
     }
+    // When showControls is true, Foundry's default frame is shown as-is.
+    // V13 does not support per-handle visibility filtering like v14.
   }
 
 
@@ -197,9 +203,11 @@ export class CustomDrawing extends Drawing {
     const noteData = this.document.flags?.[MODULE_ID];
     if (noteData?.type === "pin") return;
     if (noteData?.type) {
-      // Route video media notes to VideoPlayer, everything else to NotePreviewer
+      // Route video media notes to VideoPlayer, device notes to DevicePlayer, everything else to NotePreviewer
       if (noteData.type === "media" && noteData.videoPath) {
         new VideoPlayer(this.document).render(true);
+      } else if (noteData.type === "device") {
+        new DevicePlayer(this.document).render(true);
       } else {
         new NotePreviewer(this.document).render(true);
       }
@@ -729,7 +737,6 @@ export class CustomDrawing extends Drawing {
     // Only apply IB-specific rendering to IB notes.
     if (!this.document.flags[MODULE_ID]?.type) return this;
 
-    this.element?.setAttribute("data-investigation-note", "true");
     await this._updateSprites();
     import("./connection-manager.js").then(m => {
       m.updatePins();
@@ -901,6 +908,15 @@ export class CustomDrawing extends Drawing {
       }
     }
 
+    // Destroy device-only sprites when the note is no longer a device note
+    if (noteData.type !== "device") {
+      if (this.deviceIconText && !this.deviceIconText.destroyed) {
+        this.removeChild(this.deviceIconText);
+        this.deviceIconText.destroy();
+        this.deviceIconText = null;
+      }
+    }
+
     const isPhoto = noteData.type === "photo";
     const isIndex = noteData.type === "index";
     const isHandout = noteData.type === "handout";
@@ -973,6 +989,80 @@ export class CustomDrawing extends Drawing {
 
       await this._loadStampTexture(noteData);
       return; // Early exit for media notes
+    }
+
+    // DEVICE NOTE LAYOUT (smartphone / tablet / laptop — canvas sprite)
+    if (noteData.type === "device") {
+      const deviceType = noteData.deviceType || "smartphone";
+      const deviceDef = DEVICE_TYPES[deviceType] ?? DEVICE_TYPES.smartphone;
+      const drawingWidth = this.document.shape.width || deviceDef.canvasWidth;
+      const drawingHeight = this.document.shape.height || deviceDef.canvasHeight;
+
+      // Use note_white.webp as the card background
+      const bgImage = "modules/investigation-board/assets/note_white.webp";
+      if (!this.bgSprite) this.bgSprite = new PIXI.Sprite();
+      if (!this.bgSprite.parent) this.addChild(this.bgSprite);
+      if (!this.bgShadow) this.bgShadow = new PIXI.Sprite();
+      if (!this.bgShadow.parent) this.addChildAt(this.bgShadow, 0);
+
+      // Destroy photo sprite if coming from another type
+      if (this.photoImageSprite) {
+        if (this.photoImageSprite.parent) this.removeChild(this.photoImageSprite);
+        this.photoImageSprite.destroy();
+        this.photoImageSprite = null;
+      }
+      if (this.photoMask) this.photoMask.visible = false;
+
+      try {
+        const texture = await PIXI.Assets.load(bgImage);
+        if (texture) {
+          if (this.bgShadow && !this.bgShadow.destroyed) {
+            this.bgShadow.texture = texture;
+            this.bgShadow.width = drawingWidth;
+            this.bgShadow.height = drawingHeight;
+            try { this.bgShadow.tint = 0x000000; } catch(e) {}
+            this.bgShadow.alpha = 0.25;
+            this.bgShadow.position.set(6, 6);
+            this.bgShadow.filters = [new PIXI.BlurFilter(3)];
+          }
+          if (this.bgSprite && !this.bgSprite.destroyed) {
+            this.bgSprite.texture = texture;
+            this.bgSprite.width = drawingWidth;
+            this.bgSprite.height = drawingHeight;
+            this.bgSprite.position.set(0, 0);
+            // Tint dark to simulate a device screen
+            try { this.bgSprite.tint = 0x1a1a2e; } catch(e) {}
+          }
+        }
+      } catch(err) {
+        console.error(`IB device: failed to load background`, err);
+      }
+
+      // Device label text (device type name)
+      const label = deviceDef.label;
+      if (!this.deviceIconText || this.deviceIconText.destroyed) {
+        this.deviceIconText = new PIXI.Text(label, {
+          fontFamily: "Arial",
+          fontSize: Math.round(drawingWidth * 0.08),
+          fill: 0xaaddff,
+          align: "center",
+          wordWrap: true,
+          wordWrapWidth: drawingWidth - 16,
+        });
+        this.addChild(this.deviceIconText);
+      } else {
+        this.deviceIconText.text = label;
+        this.deviceIconText.style.fontSize = Math.round(drawingWidth * 0.08);
+        this.deviceIconText.style.wordWrapWidth = drawingWidth - 16;
+      }
+      this.deviceIconText.anchor.set(0.5, 0.5);
+      this.deviceIconText.position.set(drawingWidth / 2, drawingHeight / 2);
+      this.deviceIconText.visible = true;
+
+      if (this.noteText) this.noteText.visible = false;
+      await this._loadPinTexture({ pinColor: "none" });
+      await this._loadStampTexture(noteData);
+      return; // Early exit for device notes
     }
 
     // DOCUMENT NOTE LAYOUT (A4-style parchment/paper with title + body text)
@@ -1182,7 +1272,7 @@ export class CustomDrawing extends Drawing {
           this.photoImageSprite.mask = null;
           if (this.photoMask) this.photoMask.visible = false;
 
-          // Respect document.hidden — players never see it, GM gets dimmed via parent alpha (_getTargetAlpha → 0.4)
+          // Respect document.hidden — players never see it, GM gets dimmed via parent alpha (_refreshVisibility → 0.4)
           const hiddenForPlayer = this.document.hidden && !game.user.isGM;
           this.photoImageSprite.visible = !hiddenForPlayer;
           this.photoImageSprite.alpha = 1;
@@ -1231,12 +1321,14 @@ export class CustomDrawing extends Drawing {
       this.bgSprite = new PIXI.Sprite();
       this.addChild(this.bgSprite);
     }
+    if (!this.bgSprite.parent) this.addChild(this.bgSprite);
 
     // --- Background Shadow ---
     if (!this.bgShadow) {
       this.bgShadow = new PIXI.Sprite();
       this.addChildAt(this.bgShadow, 0); // Behind the background
     }
+    if (!this.bgShadow.parent) this.addChildAt(this.bgShadow, 0);
     
     try {
       const texture = await PIXI.Assets.load(bgImage);

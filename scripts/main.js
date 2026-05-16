@@ -203,6 +203,13 @@ Hooks.on("getSceneControlButtons", (controls) => {
     button: true,
     onClick: () => createNote("pin")
   });
+  pushTool({
+    name: "createDeviceNote",
+    title: "Create Device Note",
+    icon: "fas fa-mobile-alt",
+    button: true,
+    onClick: () => createNote("device")
+  });
 });
 
 // Hook to handle Investigation Board mode activation/deactivation
@@ -862,7 +869,7 @@ Hooks.on("getSceneNavigationContext", (app, entryOptions) => {
       else ui.notifications.warn("Investigation Board: Could not resolve Scene.");
     }
   });
-});
+}
 
 // v13: each directory has its own folder context hook (no unified getFolderContextOptions)
 const _IB_FOLDER_HOOKS = [

@@ -1,4 +1,4 @@
-import { MODULE_ID, CASSETTE_IMAGES, VIDEO_IMAGES, DOC_BACKGROUNDS } from "../config.js";
+import { MODULE_ID, CASSETTE_IMAGES, VIDEO_IMAGES, DOC_BACKGROUNDS, DEVICE_TYPES } from "../config.js";
 import { InvestigationBoardState } from "../state.js";
 import { getActorDisplayName, getEffectiveScale } from "./helpers.js";
 import { collaborativeCreate, collaborativeCreateMany } from "./socket-handler.js";
@@ -94,6 +94,8 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
   const pinW = 40;
   const docW = 595;
   const docH = 842;
+  // Device notes default to smartphone dimensions; overridden per deviceType on creation
+  const deviceDef = DEVICE_TYPES.smartphone;
 
   const width = noteType === "photo" ? photoW
                 : noteType === "index" ? indexW
@@ -101,6 +103,7 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
                 : noteType === "media" ? mediaW
                 : noteType === "pin" ? pinW
                 : noteType === "document" ? docW
+                : noteType === "device" ? deviceDef.canvasWidth
                 : stickyW;
   // Media notes start as audio (cassette) by default; height updates if user sets a videoPath
   const height = noteType === "photo" ? Math.round(photoW / (225 / 290))
@@ -109,6 +112,7 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
                  : noteType === "media" ? Math.round(mediaW * 0.74)
                  : noteType === "pin" ? pinW
                  : noteType === "document" ? docH
+                 : noteType === "device" ? deviceDef.canvasHeight
                  : stickyW;
 
   // Final coordinates
@@ -170,6 +174,18 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
     // Pin starts as Auto (audio mode). Switches to "none" when user toggles to video.
   }
 
+  // Set default apps for device notes
+  if (noteType === "device") {
+    extraFlags.deviceType = "smartphone";
+    extraFlags.pinColor = "none";
+    extraFlags.deviceApps = {
+      sms:     { enabled: true,  contactName: "Desconhecido", messages: [] },
+      gallery: { enabled: false, images: [] },
+      notes:   { enabled: false, content: "" },
+      email:   { enabled: false, from: "", subject: "", date: "", body: "" },
+    };
+  }
+
   const created = await collaborativeCreate({
     type: "r",
     author: game.user.id,
@@ -177,7 +193,7 @@ export async function createNote(noteType, { x = null, y = null } = {}) {
     y: finalY,
     shape: { width, height },
     fillColor: "#000000",
-    fillAlpha: (noteType === "handout" || noteType === "media" || noteType === "pin") ? 0.001 : 1,
+    fillAlpha: (noteType === "handout" || noteType === "media" || noteType === "pin" || noteType === "device") ? 0.001 : 1,
     strokeColor: "#000000",
     strokeWidth: 0,
     strokeAlpha: 0,
