@@ -92,7 +92,7 @@ export const DEVICE_TYPES = {
     label: 'Laptop Anos 2000',
     icon: 'fas fa-laptop',
     windowWidth: 760,
-    windowHeight: 560,
+    windowHeight: 660,
     cssClass: 'ib-device-laptop2000s',
     canvasWidth: 350,
     canvasHeight: 250,

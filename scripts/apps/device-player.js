@@ -94,6 +94,7 @@ export class DevicePlayer extends HandlebarsApplicationMixin(ApplicationV2) {
       appData,
       galleryImages,
       galleryIndex,
+      galleryIndexDisplay: galleryIndex + 1,
       galleryCurrentImage,
       galleryHasPrev,
       galleryHasNext,
@@ -125,6 +126,10 @@ export class DevicePlayer extends HandlebarsApplicationMixin(ApplicationV2) {
     const nextBtn = this.element.querySelector('.ib-gallery-nav.next');
     if (prevBtn) prevBtn.addEventListener('click', () => this._galleryNavigate(-1));
     if (nextBtn) nextBtn.addEventListener('click', () => this._galleryNavigate(1));
+
+    // Scroll SMS messages to bottom so the latest message is visible
+    const smsMessages = this.element.querySelector('.ib-sms-messages');
+    if (smsMessages) smsMessages.scrollTop = smsMessages.scrollHeight;
   }
 
   /** Navigate to an app screen or back to home (null). */
@@ -134,7 +139,7 @@ export class DevicePlayer extends HandlebarsApplicationMixin(ApplicationV2) {
       // Reset to first image when entering gallery
       this._galleryIndex = 0;
     }
-    this.render(false);
+    this.render({ force: true });
   }
 
   /** Move gallery index by delta, clamped to valid range. */
@@ -142,6 +147,6 @@ export class DevicePlayer extends HandlebarsApplicationMixin(ApplicationV2) {
     const noteData = this.document.flags[MODULE_ID] || {};
     const images = noteData.deviceApps?.gallery?.images ?? [];
     this._galleryIndex = Math.max(0, Math.min(this._galleryIndex + delta, images.length - 1));
-    this.render(false);
+    this.render({ force: true });
   }
 }
