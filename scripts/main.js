@@ -869,7 +869,7 @@ Hooks.on("getSceneNavigationContext", (app, entryOptions) => {
       else ui.notifications.warn("Investigation Board: Could not resolve Scene.");
     }
   });
-}
+});
 
 // v13: each directory has its own folder context hook (no unified getFolderContextOptions)
 const _IB_FOLDER_HOOKS = [
