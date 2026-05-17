@@ -86,6 +86,15 @@ jobs:
             git push origin HEAD:${{ github.ref_name }}
           fi
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies and build
+        run: npm ci && npm run build
+
       - name: Build release artifacts
         run: |
           # The committed module.json keeps 'manifest' pointing at /latest/ so
@@ -103,7 +112,7 @@ jobs:
 
           # Stage packaged contents
           cp _release/module.json _release/pkg/module.json
-          cp -r scripts styles templates assets packs LICENSE _release/pkg/
+          cp -r scripts styles templates assets packs dist LICENSE _release/pkg/
 
           cd _release/pkg
           zip -r ../module.zip .

@@ -21,7 +21,64 @@ Investigation Board is a Foundry VTT module (currently targeting **v14**, Build 
 
 ## Development Workflow
 
-No build step required. Edit JS/CSS and reload Foundry.
+O módulo usa **Vite** como bundler. O Foundry carrega `dist/main.js` (gerado pelo build), não os arquivos em `scripts/` diretamente.
+
+### Setup inicial
+
+```bash
+npm install
+```
+
+### Ciclo de desenvolvimento
+
+```bash
+npm run dev      # Vite watch — reconstrói dist/main.js a cada mudança em scripts/ ou src/
+```
+
+Após salvar qualquer arquivo JS/TS/TSX: dê hard-refresh no Foundry (F5) para carregar o bundle novo.
+
+### Build de produção
+
+```bash
+npm run build    # Gera dist/main.js
+```
+
+### Verificação de tipos
+
+```bash
+npm run typecheck   # tsc --noEmit — sem emissão, só validação
+```
+
+### Estrutura de fontes vs. output
+
+| Pasta | Papel |
+|---|---|
+| `scripts/` | Código JS legado (entry point: `scripts/main.js`) |
+| `src/react/` | Componentes React/TypeScript novos |
+| `src/types/` | Stubs de tipos dos globals Foundry |
+| `dist/` | Output do Vite — **não editar manualmente** |
+
+> `dist/` está no `.gitignore`. Em releases, gerar o build antes de zipar/publicar.
+
+### CSS e Assets
+
+- `styles/style.css` continua sendo carregado diretamente pelo Foundry via `module.json` — o Vite **não processa** esse arquivo.
+- Fontes em `assets/fonts/` e imagens em `assets/` continuam referenciadas via paths `modules/investigation-board/...` — sem mudança.
+
+### React em dialogs (AppV2)
+
+Componentes React são montados **dentro** de `<div data-react-root="...">` no template Handlebars, via `mountReactRoot` em `_onRender`. O AppV2 + Handlebars continua dono do shell da janela.
+
+```js
+import { mountReactRoot } from "../../src/react/mountReactRoot.ts";
+import { MeuComponente } from "../../src/react/components/MeuComponente.tsx";
+import React from "react";
+
+_onRender(context, options) {
+  const root = this.element.querySelector('[data-react-root="meu-root"]');
+  if (root) mountReactRoot(root, React.createElement(MeuComponente, { ...props }));
+}
+```
 
 To test: refresh Foundry after code changes. Existing notes may need `canvas.drawings` refresh or select/deselect. Connection lines auto-update on note movement.
 
