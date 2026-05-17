@@ -4,6 +4,7 @@ node_modules/
 # Build artifacts
 *.zip
 release-temp/
+dist/
 
 # IDE
 .vscode/

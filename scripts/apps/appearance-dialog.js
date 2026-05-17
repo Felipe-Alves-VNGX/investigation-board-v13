@@ -1,5 +1,8 @@
 import { MODULE_ID, STICKY_TINTS, INK_COLORS, DEFAULT_PIN_FOLDER, DEFAULT_STAMP_FOLDER } from "../config.js";
 import { invalidatePinFilesCache } from "../utils/helpers.js";
+import React from "react";
+import { mountReactRoot } from "../../src/react/mountReactRoot.ts";
+import { AppearancePreview } from "../../src/react/components/AppearancePreview.tsx";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -80,6 +83,18 @@ export class AppearanceDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   _onRender(context, options) {
     const html = this.element;
     const FilePicker = foundry.applications.apps.FilePicker.implementation;
+
+    // Monta preview React ao vivo dentro do fieldset Connections.
+    const previewRoot = html.querySelector('[data-react-root="ib-appearance-preview"]');
+    if (previewRoot) {
+      const lineWidthInput = html.querySelector('[name="connectionLineWidth"]');
+      const renderPreview = () => {
+        const width = parseInt(lineWidthInput?.value) || context.connectionLineWidth;
+        mountReactRoot(previewRoot, React.createElement(AppearancePreview, { lineWidth: width, color: "#cc4444" }));
+      };
+      renderPreview();
+      lineWidthInput?.addEventListener("input", renderPreview);
+    }
 
     html.querySelector('[data-action="save"]')?.addEventListener("click", async () => {
       await this._save();
