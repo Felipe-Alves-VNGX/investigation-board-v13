@@ -996,8 +996,9 @@ export class CustomDrawing extends Drawing {
       const drawingWidth = this.document.shape.width || deviceDef.canvasWidth;
       const drawingHeight = this.document.shape.height || deviceDef.canvasHeight;
 
-      // Use note_white.webp as the card background
-      const bgImage = "modules/investigation-board/assets/note_white.webp";
+      // Use custom image if set, otherwise fall back to the default placeholder
+      const hasCustomImage = !!noteData.image;
+      const bgImage = noteData.image || "modules/investigation-board/assets/note_white.webp";
       if (!this.bgSprite) this.bgSprite = new PIXI.Sprite();
       if (!this.bgSprite.parent) this.addChild(this.bgSprite);
       if (!this.bgShadow) this.bgShadow = new PIXI.Sprite();
@@ -1028,8 +1029,8 @@ export class CustomDrawing extends Drawing {
             this.bgSprite.width = drawingWidth;
             this.bgSprite.height = drawingHeight;
             this.bgSprite.position.set(0, 0);
-            // Tint dark to simulate a device screen
-            try { this.bgSprite.tint = 0x1a1a2e; } catch(e) {}
+            // Use dark tint only for the placeholder; show custom images in their original colors
+            try { this.bgSprite.tint = hasCustomImage ? 0xffffff : 0x1a1a2e; } catch(e) {}
           }
         }
       } catch(err) {
@@ -1055,7 +1056,8 @@ export class CustomDrawing extends Drawing {
       }
       this.deviceIconText.anchor.set(0.5, 0.5);
       this.deviceIconText.position.set(drawingWidth / 2, drawingHeight / 2);
-      this.deviceIconText.visible = true;
+      // Hide the label when a custom image already identifies the device visually
+      this.deviceIconText.visible = !hasCustomImage;
 
       if (this.noteText) this.noteText.visible = false;
       await this._loadPinTexture({ pinColor: "none" });

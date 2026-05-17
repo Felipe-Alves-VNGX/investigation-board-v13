@@ -402,6 +402,20 @@
       </select>
     </div>
 
+    {{#if canViewSensitive}}
+    <div class="form-group">
+      <label>Imagem no Canvas <span class="ib-hint-inline">(opcional)</span></label>
+      <div class="file-picker">
+        <input type="text" name="image" value="{{deviceImage}}" placeholder="Substitui o ícone padrão no canvas" readonly />
+        <button type="button" class="file-picker-button" title="Procurar imagem">
+          <i class="fas fa-folder-open"></i>
+        </button>
+      </div>
+    </div>
+    {{/if}}
+
+    <hr class="ib-section-divider">
+
     <nav class="ib-device-app-tabs">
       <button type="button" class="ib-tab-btn active" data-tab="sms"><i class="fas fa-comment-alt"></i> SMS</button>
       <button type="button" class="ib-tab-btn" data-tab="gallery"><i class="fas fa-images"></i> Galeria</button>

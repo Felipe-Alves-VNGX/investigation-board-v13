@@ -96,6 +96,7 @@ export class CustomDrawingSheet extends DrawingConfig {
     context.docBackground = customData.docBackground;
     context.docBackgrounds = DOC_BACKGROUNDS;
     // Device fields
+    context.deviceImage = customData.deviceImage;
     context.deviceType = customData.deviceType;
     context.deviceTypes = customData.deviceTypes;
     context.deviceApps = customData.deviceApps;
@@ -189,6 +190,8 @@ export class CustomDrawingSheet extends DrawingConfig {
         ibFlags.image ||
         (noteType === 'handout'
           ? 'modules/investigation-board/assets/newhandout.webp'
+          : noteType === 'device'
+          ? ''
           : 'modules/investigation-board/assets/placeholder.webp'),
       font: ibFlags.font || game.settings.get(MODULE_ID, 'font'),
       fontSize: ibFlags.fontSize || defaultFontSize,
@@ -240,6 +243,7 @@ export class CustomDrawingSheet extends DrawingConfig {
       title: ibFlags.title || '',
       docBackground: ibFlags.docBackground || 'parchment',
       // Device fields
+      deviceImage: ibFlags.image || '',
       deviceType: ibFlags.deviceType || 'smartphone',
       deviceTypes: DEVICE_TYPES,
       deviceApps: (() => {
@@ -862,6 +866,7 @@ export class CustomDrawingSheet extends DrawingConfig {
           if (noteType === 'device') {
             const newDeviceType = data.deviceType || 'smartphone';
             updates[`flags.${MODULE_ID}.deviceType`] = newDeviceType;
+            updates[`flags.${MODULE_ID}.image`] = data.image || '';
 
             // Parse SMS messages from textarea (format: "eu: texto [HH:MM]" or "contato: texto [HH:MM]")
             const rawSms = (data['sms.messages'] || '').trim();

@@ -2504,48 +2504,54 @@ body.investigation-board-mode .drawing:not([data-investigation-note='true']) {
    ============================================================ */
 
 .ib-device-config {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin: 8px 0;
-  background: #fafafa;
+  border: 1px solid var(--color-border-light, #b5b3a4);
+  border-radius: 3px;
+  padding: 8px 10px 10px;
+  margin: 6px 0;
+  background: transparent;
 }
 
 .ib-device-config legend {
   font-weight: 700;
   font-size: 12px;
-  padding: 0 6px;
-  color: #444;
+  padding: 0 4px;
 }
 
 .ib-device-app-tabs {
   display: flex;
   gap: 0;
-  margin: 10px 0 0;
-  border-bottom: 2px solid #ddd;
+  margin: 8px 0 0;
+  border-bottom: 2px solid var(--color-border-light, #b5b3a4);
 }
 
 .ib-device-app-tabs .ib-tab-btn {
   flex: 1;
-  padding: 5px 4px;
+  padding: 4px 2px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   font-size: 11px;
-  color: #777;
+  color: inherit;
+  opacity: 0.6;
   cursor: pointer;
   white-space: nowrap;
   gap: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.1s;
+}
+
+.ib-device-app-tabs .ib-tab-btn:hover {
+  opacity: 0.9;
 }
 
 .ib-device-app-tabs .ib-tab-btn.active {
-  color: #2a6099;
-  border-bottom-color: #2a6099;
+  opacity: 1;
   font-weight: 700;
+  border-bottom-color: var(--color-primary, #4b7eb5);
+  color: var(--color-primary, #4b7eb5);
 }
 
 .ib-app-enable-label {
@@ -2554,7 +2560,6 @@ body.investigation-board-mode .drawing:not([data-investigation-note='true']) {
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #444;
   margin: 8px 0 6px;
 }
 
@@ -2562,21 +2567,20 @@ body.investigation-board-mode .drawing:not([data-investigation-note='true']) {
   margin-top: 4px;
   font-size: 11px;
   padding: 3px 10px;
-  color: #333;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
   border-radius: 3px;
   cursor: pointer;
 }
 
-.ib-gallery-browse-btn:hover {
-  background: #e4e4e4;
-}
-
 .ib-hint {
   display: block;
-  color: #888;
   font-size: 10px;
   margin-top: 3px;
   line-height: 1.4;
+  opacity: 0.7;
+}
+
+.ib-hint-inline {
+  font-size: 10px;
+  opacity: 0.7;
+  font-weight: normal;
 }
